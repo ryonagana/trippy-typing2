@@ -1,0 +1,4 @@
+{
+    "glsl-linter.validatorPath": "/home/archdark/.glsl/bin/",
+    "glsllint.glslangValidatorPath": "/home/archdark/.glsl/bin/glslangValidator"
+}
