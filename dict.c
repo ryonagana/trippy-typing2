@@ -4,7 +4,7 @@
 #include <error.h>
 #include <errno.h>
 #endif
-
+#include <assert.h>
 #include <raylib.h>
 
 
@@ -118,6 +118,8 @@ char **dictionary_array_random_words(dictionary *dt, int count)
 
     for(i = 0; i < count ; i++){
         int rnd = GetRandomValue(0, dt->count - 1);
+
+        assert(dt->words[rnd]);
         memcpy(list[i], dt->words[rnd], 255);
     }
 

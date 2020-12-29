@@ -1,4 +1,4 @@
-#version 330
+#version 100 core
 precision mediump float;
 #define PI 3.1415926535897932384626433832795
  
@@ -9,11 +9,11 @@ varying vec2 v_coords;
 
 vec3 set_color(float v){
 
-    float  r =  float(sin((v * PI)));
-    float  g =  float(sin(v*PI + 2.0 * PI / 3.0));
-    float  b =  float(sin(v*PI + 2.0 * PI / 3.0));
+    float  r =  sin((v * PI));
+    float  g =  sin(v * PI + 2.0 * PI / 3.0);
+    float  b =  sin(v * PI + 2.0 * PI / 3.0);
 
-    return vec3(1.0);
+    return vec3(r,g,b);
 }
  
 void main() {
@@ -26,9 +26,10 @@ void main() {
     v += sin(sqrt(c.x*c.x+c.y*c.y+1.0)+u_time);
     v = v/2.0;
 
-    
+    vec3 colors = vec3(1, sin(PI*v), cos(PI*v));
 
-    gl_FragColor = vec4(set_color(v), 1.0);
+    gl_FragColor = vec4(colors, 1.0);
+
 
 
 

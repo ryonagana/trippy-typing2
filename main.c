@@ -1,17 +1,51 @@
-#include <stdio.h>
-#include <raylib.h>
-#include <stdint.h>
-#include <time.h>
-
+#include "main.h"
 #include "dict.h"
 #include "resources.h"
 #include "particles.h"
+#include "menu.h"
+
+
 
 const int ScreenWidth = 800;
 const int ScreenHeight = 600;
 
 int64_t frameCounter = 0;
 dictionary *dt = NULL;
+
+Font gameFont;
+
+
+typedef struct Level {
+    int speed;
+    int   words_screen;
+    int hits_objective;
+}Level;
+
+typedef enum {
+    LEVEL_1,
+    LEVEL_2,
+    LEVEL_3,
+
+    LEVEL_TOTAL
+}LevelNum;
+
+Level level_config[LEVEL_TOTAL + 1] = {
+    {1, 4,  3},
+    {2, 6,  5},
+    {4, 8,  6},
+    {4, 10, 9}
+};
+
+
+Color color_transition[] = {
+    GREEN,
+    BLUE,
+    PINK,
+    RED,
+    RAYWHITE
+};
+
+int color_index = 0;
 
 
 
@@ -31,9 +65,11 @@ typedef struct Gameplay {
     TextData *actualWord;
     int hit;
     int score;
+    Level *level;
+    int level_num;
 }Gameplay;
 
-
+char key_input[255] = {'\0'};
 
 
 Gameplay gameplay;
@@ -41,6 +77,10 @@ Particle *particleList = NULL;
 Particle *RainMJ_BG = NULL;
 
 // gameplay prototypes
+
+void Gameplay_InitNewGame();
+void Gameplay_InitLevel(int num);
+
 int Gameplay_CheckTextBound(Gameplay *gm);
 void GameplayResetWord(Gameplay *gm);
 
@@ -76,6 +116,20 @@ void LogCustom(int msgType, const char *text, va_list args)
     printf("\n");
 }
 
+
+void Gameplay_InitNewGame(){
+    dt = dictionary_start("words");
+    gameplay.chosen_words = dictionary_array_random_words(dt, 18);
+    gameplay.actualWord = TextData_Start(gameplay.chosen_words[0], ScreenWidth - 50, GetRandomValue(0, ScreenHeight) );
+    gameplay.level_num = LEVEL_1;
+    gameplay.level = &level_config[gameplay.level_num];
+
+}
+
+void Gameplay_InitLevel(int num){
+    gameplay.level_num = num % LEVEL_TOTAL + 1;
+    gameplay.level= &level_config[gameplay.level_num];
+}
 
 int Gameplay_CheckTextBound(Gameplay *gm){
     if(gm->actualWord->x  < 0){
@@ -155,24 +209,33 @@ void GameplayResetWord(Gameplay *gm){
 int main()
 {
     srand((unsigned)time(NULL));
+    SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(ScreenWidth, ScreenHeight, "Trippy Typing!");
     Resources_Init();
 
+
+
+    gameFont = LoadFont(TextFormat("res/hippie.ttf"));
+
+
     SetTargetFPS(60);
     SetTraceLogCallback(LogCustom);
+    Menu_Loop();
 
+    /*
     dt = dictionary_start("words");
 
     gameplay.chosen_words = dictionary_array_random_words(dt, 18);
     gameplay.actualWord = TextData_Start(gameplay.chosen_words[0], ScreenWidth - 50, GetRandomValue(0, ScreenHeight) );
+    */
+    Gameplay_InitNewGame();
 
-    TextData_SetSpeed( gameplay.actualWord, 1);
+    TextData_SetSpeed( gameplay.actualWord, level_config[gameplay.level_num].speed);
 
    // particleList = Particle_Init(PARTICLES_MAX);
     RainMJ_BG = Particle_Init(PARTICLES_MAX);
 
-    char key_input[255] = {'\0'};
-    int  input_size = 0;
+
 
 
     while(!WindowShouldClose()){
@@ -180,16 +243,14 @@ int main()
 
         int key = GetKeyPressed();
 
-        if( (frameCounter / 60) % 6 ){
-            Particle_Rain(RainMJ_BG, GetRandomValue(0, ScreenWidth),-90, 12, GetRandomValue(50, 700), TEX_MARIJUANA);
-        }
+
+
 
 
         if( (gameplay.actualWord->x) < 0){
             printf("FIM\n");
             GameplayResetWord(&gameplay);
             memset(key_input,'\0',255);
-            input_size = 0;
 
         }else {
 
@@ -198,9 +259,11 @@ int main()
 
 
                 if(!gameplay.actualWord->hit){
-                    if(key ==  TextToUpper(gameplay.actualWord->word)[gameplay.actualWord->index]){
+                    if( key ==  TextToLower(gameplay.actualWord->word)[gameplay.actualWord->index]){
                          key_input[gameplay.actualWord->index] = key;
                          gameplay.actualWord->index++;
+
+                         Particle_Rain(RainMJ_BG, gameplay.actualWord->x, gameplay.actualWord->y, GetRandomValue(3,20), GetRandomValue(0,400), GetRandomValue(0,300) / 100 - 0.5, GetRandomValue(0,300) / 100 - 0.5, TEX_MARIJUANA);
 
                     }
                 }
@@ -214,6 +277,7 @@ int main()
 
             if(gameplay.actualWord->index >= gameplay.actualWord->size - 1){
                    gameplay.actualWord->hit = 1;
+                   gameplay.score++;
 
             }
 
@@ -221,8 +285,7 @@ int main()
                 printf("HIT\n");
                 GameplayResetWord(&gameplay);
                 memset(key_input,'\0',255);
-                input_size = 0;
-            }
+                          }
 
             int i = 0;
             for(i = 0; i < PARTICLES_MAX;i++){
@@ -247,30 +310,47 @@ int main()
 
         key = GetKeyPressed();
 
+        if(((frameCounter / 60) % 10) == 0){
+            color_index++;
+        }
+
 
         BeginDrawing();
         ClearBackground(BLACK);
+
+        BeginBlendMode(BLEND_ADDITIVE);
+
         int k;
 
         for(k = 0; k < PARTICLES_MAX;k++){
             //Particle_Draw(&particleList[i]);
 
 
-            //Particle_Draw(&RainMJ_BG[k]);
+            Particle_Draw(&RainMJ_BG[k]);
         }
 
-         DrawText(gameplay.actualWord->word, gameplay.actualWord->x ,gameplay.actualWord->y + 2, 30, WHITE);
-        DrawText(gameplay.actualWord->word, gameplay.actualWord->x ,gameplay.actualWord->y, 30, GREEN);
-        DrawText( TextToLower(key_input), gameplay.actualWord->x ,gameplay.actualWord->y, 30, PINK);
-
-
-        BeginBlendMode(BLEND_ALPHA);
-
         EndBlendMode();
+
+
+        DrawTextEx(gameFont, gameplay.actualWord->word, (Vector2){gameplay.actualWord->x ,gameplay.actualWord->y}, 29, 3, WHITE);
+        DrawTextEx(gameFont, gameplay.actualWord->word, (Vector2){gameplay.actualWord->x ,gameplay.actualWord->y + 2}, 29, 3, (Color){255,0,0,255});
+        //DrawText(gameplay.actualWord->word, gameplay.actualWord->x ,gameplay.actualWord->y + 2, 30, WHITE);
+        //DrawText(gameplay.actualWord->word, gameplay.actualWord->x ,gameplay.actualWord->y, 30, GREEN);
+        //DrawText( TextToLower(key_input), gameplay.actualWord->x ,gameplay.actualWord->y, 30, PINK);
+        DrawTextEx(gameFont, TextToLower(key_input), (Vector2){gameplay.actualWord->x ,gameplay.actualWord->y}, 29, 3, PINK);
+        const char *text_score = TextFormat("Score %d", gameplay.score * 100);
+
+        DrawTextEx(gameFont, text_score, (Vector2){10 ,0}, 29, 3, color_transition[color_index % 5]);
+
+
+
+
 
         EndDrawing();
     }
     Resources_Unload();
+    UnloadFont(gameFont);
+
     CloseWindow();
 
     return 0;

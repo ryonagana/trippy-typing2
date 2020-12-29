@@ -18,6 +18,7 @@ Particle* Particle_Init(int count){
         self[i].rot = (float)GetRandomValue(0,3600) / 10;
         self[i].ttl = 0;
         self[i].tex = NULL;
+        self[i].alive = false;
     }
 
     return self;
@@ -43,13 +44,13 @@ void Particle_Explosion(Particle *p, int x, int y, int spread, int count, int li
             float rot = (float)GetRandomValue(0,3600) / 10;
             int ttl = life ? life : GetRandomValue(0,50);
 
-            Particle_Set(tmp, (Vector2) { spread_val_x, spread_val_y }, (Vector2){speed_x, speed_y}, c, 1.0f, size, rot, ttl, texture);
+            Particle_Set(tmp, (Vector2) { spread_val_x, spread_val_y }, (Vector2){speed_x, speed_y}, c, 1.0f, size, rot, ttl, texture, true);
         }
     }
 
 }
 
-void Particle_Set(Particle *ps, Vector2 pos, Vector2 vel, Color col, float alpha, float size, float rotation, int live, int tex)
+void Particle_Set(Particle *ps, Vector2 pos, Vector2 vel, Color col, float alpha, float size, float rotation, int live, int tex, bool alive)
 {
     ps->position = pos;
     ps->dvel = vel;
@@ -59,14 +60,17 @@ void Particle_Set(Particle *ps, Vector2 pos, Vector2 vel, Color col, float alpha
     ps->rot = rotation;
     ps->ttl = live;
     ps->tex = Resources_GetTexture(tex);
+    ps->alive = alive;
 }
 
 void Particle_Update(Particle *p)
 {
     p->position.x += p->dvel.x;
     p->position.y += p->dvel.y;
-    p->rot += 0.3;
+    p->rot += 0.9;
     p->ttl--;
+    p->alive = p->ttl > 0 ? true: false;
+
 }
 
 Particle *Particle_GetFreeSlot(Particle *p, int max_count)
@@ -83,7 +87,7 @@ void Particle_Draw(Particle *p)
 
     if(p->tex == NULL) return;
 
-        if(p->ttl > 0){
+        if(p->alive){
             DrawTexturePro(*p->tex, (Rectangle){0.0f, 0.0f,  p->tex->width, p->tex->height},
                            (Rectangle){p->position.x, p->position.y,  p->tex->width * p->size, p->tex->height * p->size},
                            (Vector2){p->tex->width * p->size, p->tex->height * p->size },
@@ -92,7 +96,7 @@ void Particle_Draw(Particle *p)
 
 }
 
-void Particle_Rain(Particle *p, int x, int y, int count, int life, int texture)
+void Particle_Rain(Particle *p, int x, int y, int count, int life, float speed_x, float speedy, int texture)
 {
     int i;
     Particle *tmp;
@@ -112,7 +116,7 @@ void Particle_Rain(Particle *p, int x, int y, int count, int life, int texture)
             float rot = (float)GetRandomValue(0,3600) / 10;
             int ttl = life ? life : GetRandomValue(0,450);
 
-            Particle_Set(tmp, (Vector2) { spread_val_x, spread_val_y }, (Vector2){speed_x, speed_y}, c, 1.0f, size, rot, ttl, texture);
+            Particle_Set(tmp, (Vector2) { spread_val_x, spread_val_y }, (Vector2){speed_x, speed_y}, c, 1.0f, size, rot, ttl, texture, true);
         }
     }
 }
