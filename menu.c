@@ -2,9 +2,7 @@
 #include "fx.h"
 
 static Menu *main_menu;
-static MenuItem  *item_newgame;
-
-
+static Font menuFont;
 
 
 static void menu_newgame_callback(void *data){
@@ -55,7 +53,7 @@ void Menu_ItemAdd(Menu *m, int id, const char *name, void (*menu_selected_callba
     m->items[m->count_items].id = id;
     m->items[m->count_items].menu_selected = menu_selected_callback;
     strncpy(m->items[m->count_items].name, name, 56 - strlen(name));
-    m->items[m->count_items].x = m->x + 30;
+    m->items[m->count_items].x = m->x;
     m->items[m->count_items].y = m->y;
     m->count_items++;
 }
@@ -69,23 +67,11 @@ void Menu_ItemAdd2(Menu *m, MenuItem *item)
 void Menu_Update(Menu *m)
 {
     int i;
-    int key = GetKeyPressed();
-
-
-    if(key == KEY_UP){
-        m->cursor_y += 30;
-    }
-
-    if(key == KEY_DOWN){
-        m->cursor_y -= 30;
-    }
-
-
 
     for(i = 0; i < MAX_ITEMS; i++){
        if(&m->items[i] == NULL) continue;
 
-        m->cursor_x = m->x - 30;
+        m->cursor_x = m->x;
         m->cursor_y = m->y;
     }
 }
@@ -97,30 +83,66 @@ void Menu_Draw(Menu *m)
     for(i = 0; i < MAX_ITEMS; i++){
        if(&m->items[i] == NULL) continue;
         MenuItem *item = &m->items[i];
-        DrawCircle(m->cursor_x, m->cursor_y, 18, RED);
-        DrawText(item->name, item->x,  (item->y * i) + 20, 25, WHITE);
 
+        DrawCircle(m->cursor_x, m->cursor_y, 10, RED);
+        DrawTextEx(menuFont, item->name, (Vector2){item->x, item->y * i}, 50, 2, WHITE);
+        DrawTextEx(menuFont, item->name, (Vector2){item->x, item->y * i + 2}, 50, 2, GREEN);
 
     }
 }
 
 void Menu_Loop()
 {
-    main_menu = Menu_Start(0, 0);
+    menuFont = LoadFont("res/hippie.ttf");
+    main_menu = Menu_Start(GetScreenWidth() / 2, GetScreenHeight() / 2);
     Menu_ItemAdd(main_menu, 0, "New Game", menu_newgame_callback);
     Menu_ItemAdd(main_menu, 1, "Quit", NULL);
+    int64_t frame_counter = 0;
 
-    Plasma p = Fx_FuzzyColors();
+
+    //ColorPallette p = Fx_FuzzyColors();
 
     while(!WindowShouldClose()){
+        frame_counter++;
+        static float frame = 0;
+        frame += GetFrameTime();
+        int key = GetKeyPressed();
+
+
+
+
+            if(IsKeyPressed(KEY_ENTER)){
+                break;
+            }
+
+            if(IsKeyPressed(KEY_UP)){
+                main_menu->cursor_y += 30;
+            }
+
+            if(IsKeyPressed(KEY_DOWN)){
+                main_menu->cursor_y -= 30;
+            }
+
+            fprintf(stdout, "key %c", key);
+
+
+
+
 
         Menu_Update(main_menu);
 
         BeginDrawing();
         ClearBackground(BLACK);
-        Fx_Plasma(&p, GetScreenWidth(),GetScreenHeight());
+        Fx_Plasma(GetScreenWidth(),GetScreenHeight(), frame);
+        //Fx_LavaLamp(&p, GetScreenWidth(),GetScreenHeight());
         Menu_Draw(main_menu);
+
+        if( ((frame_counter / 60) % 2) == 0){
+            DrawText("PRESS ENTER!", GetScreenWidth() / 2 - 50, GetScreenHeight() - 100, 50, RED);
+        }
 
         EndDrawing();
     }
+
+    UnloadFont(menuFont);
 }

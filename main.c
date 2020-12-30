@@ -3,7 +3,7 @@
 #include "resources.h"
 #include "particles.h"
 #include "menu.h"
-
+#include "fx.h"
 
 
 const int ScreenWidth = 800;
@@ -14,6 +14,7 @@ dictionary *dt = NULL;
 
 Font gameFont;
 
+#define TEXT_SIZE 45
 
 typedef struct Level {
     int speed;
@@ -30,10 +31,10 @@ typedef enum {
 }LevelNum;
 
 Level level_config[LEVEL_TOTAL + 1] = {
-    {1, 4,  3},
-    {2, 6,  5},
-    {4, 8,  6},
-    {4, 10, 9}
+    {25, 4,  3},
+    {30, 6,  5},
+    {40, 8,  6},
+    {70, 10, 9}
 };
 
 
@@ -75,6 +76,9 @@ char key_input[255] = {'\0'};
 Gameplay gameplay;
 Particle *particleList = NULL;
 Particle *RainMJ_BG = NULL;
+
+
+ColorPallette pallete;
 
 // gameplay prototypes
 
@@ -213,7 +217,7 @@ int main()
     InitWindow(ScreenWidth, ScreenHeight, "Trippy Typing!");
     Resources_Init();
 
-
+    pallete = Fx_FuzzyColors();
 
     gameFont = LoadFont(TextFormat("res/hippie.ttf"));
 
@@ -222,18 +226,14 @@ int main()
     SetTraceLogCallback(LogCustom);
     Menu_Loop();
 
-    /*
-    dt = dictionary_start("words");
-
-    gameplay.chosen_words = dictionary_array_random_words(dt, 18);
-    gameplay.actualWord = TextData_Start(gameplay.chosen_words[0], ScreenWidth - 50, GetRandomValue(0, ScreenHeight) );
-    */
     Gameplay_InitNewGame();
 
     TextData_SetSpeed( gameplay.actualWord, level_config[gameplay.level_num].speed);
 
    // particleList = Particle_Init(PARTICLES_MAX);
     RainMJ_BG = Particle_Init(PARTICLES_MAX);
+
+
 
 
 
@@ -303,7 +303,7 @@ int main()
                 Particle_Update(&RainMJ_BG[i]);
             }
 
-            gameplay.actualWord->x -= gameplay.actualWord->speed;
+            gameplay.actualWord->x -= gameplay.level->speed;
             //fprintf(stderr, "x:%d y:%d\n", gameplay.actualWord->x, gameplay.actualWord->y);
         }
 
@@ -317,8 +317,8 @@ int main()
 
         BeginDrawing();
         ClearBackground(BLACK);
-
-        BeginBlendMode(BLEND_ADDITIVE);
+        Fx_LavaLamp(&pallete, GetScreenWidth(), GetScreenHeight());
+        BeginBlendMode(BLEND_ALPHA);
 
         int k;
 
@@ -332,12 +332,12 @@ int main()
         EndBlendMode();
 
 
-        DrawTextEx(gameFont, gameplay.actualWord->word, (Vector2){gameplay.actualWord->x ,gameplay.actualWord->y}, 29, 3, WHITE);
-        DrawTextEx(gameFont, gameplay.actualWord->word, (Vector2){gameplay.actualWord->x ,gameplay.actualWord->y + 2}, 29, 3, (Color){255,0,0,255});
+        DrawTextEx(gameFont, gameplay.actualWord->word, (Vector2){gameplay.actualWord->x ,gameplay.actualWord->y}, TEXT_SIZE, 3, WHITE);
+        DrawTextEx(gameFont, gameplay.actualWord->word, (Vector2){gameplay.actualWord->x ,gameplay.actualWord->y + 2}, TEXT_SIZE, 3, (Color){255,0,0,255});
         //DrawText(gameplay.actualWord->word, gameplay.actualWord->x ,gameplay.actualWord->y + 2, 30, WHITE);
         //DrawText(gameplay.actualWord->word, gameplay.actualWord->x ,gameplay.actualWord->y, 30, GREEN);
         //DrawText( TextToLower(key_input), gameplay.actualWord->x ,gameplay.actualWord->y, 30, PINK);
-        DrawTextEx(gameFont, TextToLower(key_input), (Vector2){gameplay.actualWord->x ,gameplay.actualWord->y}, 29, 3, PINK);
+        DrawTextEx(gameFont, TextToLower(key_input), (Vector2){gameplay.actualWord->x ,gameplay.actualWord->y}, TEXT_SIZE, 3, PINK);
         const char *text_score = TextFormat("Score %d", gameplay.score * 100);
 
         DrawTextEx(gameFont, text_score, (Vector2){10 ,0}, 29, 3, color_transition[color_index % 5]);
