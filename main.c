@@ -31,10 +31,10 @@ typedef enum {
 }LevelNum;
 
 Level level_config[LEVEL_TOTAL + 1] = {
-    {25, 4,  3},
-    {30, 6,  5},
+    {10, 4,  3},
+    {20, 6,  5},
     {40, 8,  6},
-    {70, 10, 9}
+    {55, 10, 9}
 };
 
 
